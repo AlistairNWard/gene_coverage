@@ -24,6 +24,7 @@ OBJECTS=dataProcessing.o \
 
 # Executables
 coverage ../bin/coverage: coverage.o mean.o pileup.o dataProcessing.o $(OBJECTS)
+	@mkdir -p ../bin
 	$(CXX) $(CFLAGS) $(INCLUDE) coverage.o $(OBJECTS) -o ../bin/coverage $(LIBS)
 
 # Objects
