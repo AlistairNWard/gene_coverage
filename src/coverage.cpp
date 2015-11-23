@@ -5,6 +5,7 @@
 #include <getopt.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 using namespace std;
 using namespace BamTools;
@@ -226,6 +227,9 @@ int main(int argc, char * argv[])
   vector<double> means;
   vector<double> sds;
 
+  // Variables for defining a feature id.
+  int exonId = 1;
+
   // Loop over all regions.
   vector<string>::iterator iter    = regionList.begin();
   vector<string>::iterator iterEnd = regionList.end();
@@ -255,6 +259,12 @@ int main(int argc, char * argv[])
       unsigned int length = region.RightPosition - region.LeftPosition + 1;
       cov.featureLengths.push_back(length);
 
+      // Create an id with the region included.
+      ostringstream oss;
+      oss << "#" << exonId << '-' << *iter;
+      cov.ids.push_back(oss.str());
+      exonId++;
+
       // Set up the pileup engine.
       PileupEngine pileup;
 
@@ -269,6 +279,9 @@ int main(int argc, char * argv[])
   cov.sort();
 
   // Iterators for features.
+  vector<string>::iterator idIter    = cov.ids.begin();
+  vector<string>::iterator idIterEnd = cov.ids.end();
+
   vector<int>::iterator minIter    = cov.featureMin.begin();
   vector<int>::iterator minIterEnd = cov.featureMin.end();
 
@@ -285,9 +298,8 @@ int main(int argc, char * argv[])
   vector<double>::iterator sdIterEnd = cov.featureSd.end();
 
   // Iterate over the feature minimum values and increment all other iterators as we go.
-  int exonId = 1;
-  for (; minIter != minIterEnd; ++minIter) {
-    outFile << "#" << exonId << endl;
+  for (; idIter != idIterEnd; ++idIter) {
+    outFile << *idIter << endl;
     outFile << *minIter << endl;
     outFile << *maxIter << endl;
     outFile << *medIter << endl;
@@ -298,6 +310,7 @@ int main(int argc, char * argv[])
     exonId++;
 
     // Increment the iterators.
+    ++minIter;
     ++maxIter;
     ++meanIter;
     ++medIter;

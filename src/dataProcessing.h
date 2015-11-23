@@ -11,11 +11,19 @@
 #ifndef DATA_PROCESSING_H
 #define DATA_PROCESSING_H
 
+#include <string>
+#include <sstream>
 #include <vector>
+
+using namespace std;
 
 class coverageData {
 
   public:
+
+    // id for the region.
+    std::vector<string> ids;
+
     // Hold the data for generating the data.
     std::vector<int> depthData;
     std::vector<int> featureLengths;
