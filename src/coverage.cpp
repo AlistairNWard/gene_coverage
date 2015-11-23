@@ -261,7 +261,7 @@ int main(int argc, char * argv[])
 
       // Create an id with the region included.
       ostringstream oss;
-      oss << exonId << "	" << *iter;
+      oss << exonId << "\t" << *iter;
       cov.ids.push_back(oss.str());
       exonId++;
 
@@ -298,11 +298,11 @@ int main(int argc, char * argv[])
   vector<double>::iterator sdIterEnd = cov.featureSd.end();
 
   // Include a header line.
-  outFile << "#id       region  min     max     median  mean    sd" << endl;
+  outFile << "#id\tregion\tmin\tmax\tmedian\tmean\tsd" << endl;
 
   // Iterate over the feature minimum values and increment all other iterators as we go.
   for (; idIter != idIterEnd; ++idIter) {
-    outFile << *idIter << "     " << *minIter << "      " << *maxIter << "      " << *medIter << "      " << *meanIter << "     " << *sdIter << endl;
+    outFile << *idIter << "\t" << *minIter << "\t" << *maxIter << "\t" << *medIter << "\t" << *meanIter << "\t" << *sdIter << endl;
 
     // Increment the exon id.
     exonId++;
@@ -316,5 +316,5 @@ int main(int argc, char * argv[])
   }
 
   // Now include the gene level information.
-  outFile << "gene      NA      " << cov.geneMin << "   " << cov.geneMax << "   " << cov.geneMedian << "        " << cov.geneMean << "  " << cov.geneSd << endl;
+  outFile << "gene\tNA\t" << cov.geneMin << "\t" << cov.geneMax << "\t" << cov.geneMedian << "\t" << cov.geneMean << "\t" << cov.geneSd << endl;
 }
