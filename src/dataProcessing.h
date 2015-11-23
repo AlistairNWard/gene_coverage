@@ -36,7 +36,7 @@ class coverageData {
     int geneMax;
 
   public:
-    coverageData(size_t);
+    coverageData(std::size_t);
     ~coverageData(void);
 
   // Public methods.
