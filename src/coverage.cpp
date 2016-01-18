@@ -1,7 +1,5 @@
 #include "api/BamMultiReader.h"
 #include "dataProcessing.h"
-#include "mean.h"
-#include "pileup.h"
 #include <getopt.h>
 #include <iostream>
 #include <fstream>
@@ -130,6 +128,43 @@ bool ParseRegionString(const string& regionString, const BamMultiReader& reader,
   return true;
 }
 
+bool processCigar(BamAlignment& al, BamRegion& region, int startPosition, vector<int>& coverage) {
+  
+  // Intialize local variables.
+  const int numCigarOps = (const int)al.CigarData.size(); 
+  int positionInRegion  = al.Position - startPosition;
+  
+  // Iterate over the CIGAR operations. 
+  for (int i = 0; i < numCigarOps; ++i ) {
+    const CigarOp& op = al.CigarData.at(i);
+  
+    // If the CIGAR string indicates a match.
+    if (op.Type == 'M') {
+      for (int j = positionInRegion; j < (positionInRegion + (int)op.Length); ++j) {
+        if (j < coverage.size()) {coverage[j]++;}
+      }
+      positionInRegion += (int)op.Length;
+    }
+  
+    // If the bases are soft or hard clipped bases, advance the position in the region, but do not update
+    // coverage.
+    else if (op.Type == 'S' || op.Type == 'H') { positionInRegion += (int)op.Length; }
+  
+    // If there is an insertion, do nothing. All the bases in the insertion do not cover reference bases, so 
+    // should not be counted and the position in the region is not advanced.
+    else if (op.Type == 'I') { }
+  
+    // If there is an deletion, count the deleted bases as covered and advance the position in the region.
+    else if (op.Type == 'D') {
+      for (int j = positionInRegion; j < (positionInRegion + (int)op.Length); ++j) {
+        if (j < coverage.size()) {coverage[j]++;}
+      }
+      positionInRegion += (int)op.Length;
+    }
+  }
+  return true;
+}
+
 int main(int argc, char * argv[])
 {
   // record command line parameters
@@ -197,7 +232,6 @@ int main(int argc, char * argv[])
   vector<string> regionList = getRegions(regionsFile);
 
   // Define a structure for holding mean information.
-  runningMean rm;
   coverageData cov(regionList.size());
 
   // Open the multireader
@@ -209,7 +243,6 @@ int main(int argc, char * argv[])
 
   // Define a region and alignment.
   BamRegion region;
-  BamAlignment al;
 
   // Retrieve references.
   BamTools::RefVector references = reader.GetReferenceData();
@@ -266,55 +299,82 @@ int main(int argc, char * argv[])
       exonId++;
 
       // Set up the pileup engine.
-      PileupEngine pileup;
+      //PileupEngine pileup;
 
       // Parse the region and build up statistics.
-      while ( reader.GetNextAlignment(al) ) { pileup.AddAlignment(al, region, cov); }
-      pileup.Flush(region, cov);
+      cout << "REGION: " << region.LeftPosition << "-" << region.RightPosition << endl;
+
+      // Define a new BamAlignment. Declaring here will ensure that if this region has no reads, but the previous
+      // region did, the alignment object will be cleared.
+      BamAlignment al;
+
+      // Get the first alignment to set the start coordinate of the first base in the first read.
+      reader.GetNextAlignment(al);
+
+      // If there are no alignments.
+      if (al.Position == -1) {
+        cout << "  NO ALIGNMENTS -> NO COVERAGE" << endl;
+      } else {
+
+        // Initialise variables.
+        vector<int> coverage(region.RightPosition - al.Position);
+        int coverageStart = al.Position;
+
+        // Process the first read.
+        processCigar(al, region, coverageStart, coverage);
+
+        // Loop over the remaining reads spanning the region.
+        while ( reader.GetNextAlignment(al) ) { processCigar(al, region, coverageStart, coverage); }
+
+        //
+        int start = region.LeftPosition - coverageStart;
+        vector<int>::iterator covIter = coverage.begin() + start;
+        vector<int>::iterator covIterEnd = coverage.end();
+      }
     }
   }
 
   // Sort the coverages in each feature (for median calculation) and generate a sorted list of all depths (for
   // the gene level calculation).
-  cov.sort();
+  //cov.sort();
 
   // Iterators for features.
-  vector<string>::iterator idIter    = cov.ids.begin();
-  vector<string>::iterator idIterEnd = cov.ids.end();
+  //vector<string>::iterator idIter    = cov.ids.begin();
+  //vector<string>::iterator idIterEnd = cov.ids.end();
 
-  vector<int>::iterator minIter    = cov.featureMin.begin();
-  vector<int>::iterator minIterEnd = cov.featureMin.end();
+  //vector<int>::iterator minIter    = cov.featureMin.begin();
+  //vector<int>::iterator minIterEnd = cov.featureMin.end();
 
-  vector<int>::iterator maxIter    = cov.featureMax.begin();
-  vector<int>::iterator maxIterEnd = cov.featureMax.end();
+  //vector<int>::iterator maxIter    = cov.featureMax.begin();
+  //vector<int>::iterator maxIterEnd = cov.featureMax.end();
 
-  vector<double>::iterator meanIter    = cov.featureMean.begin();
-  vector<double>::iterator meanIterEnd = cov.featureMean.end();
+  //vector<double>::iterator meanIter    = cov.featureMean.begin();
+  //vector<double>::iterator meanIterEnd = cov.featureMean.end();
 
-  vector<double>::iterator medIter    = cov.featureMedian.begin();
-  vector<double>::iterator medIterEnd = cov.featureMedian.end();
+  //vector<double>::iterator medIter    = cov.featureMedian.begin();
+  //vector<double>::iterator medIterEnd = cov.featureMedian.end();
 
-  vector<double>::iterator sdIter    = cov.featureSd.begin();
-  vector<double>::iterator sdIterEnd = cov.featureSd.end();
+  //vector<double>::iterator sdIter    = cov.featureSd.begin();
+  //vector<double>::iterator sdIterEnd = cov.featureSd.end();
 
   // Include a header line.
-  outFile << "#id\tregion\tmin\tmax\tmedian\tmean\tsd" << endl;
+  //outFile << "#id\tregion\tmin\tmax\tmedian\tmean\tsd" << endl;
 
   // Iterate over the feature minimum values and increment all other iterators as we go.
-  for (; idIter != idIterEnd; ++idIter) {
-    outFile << *idIter << "\t" << *minIter << "\t" << *maxIter << "\t" << *medIter << "\t" << *meanIter << "\t" << *sdIter << endl;
+  //for (; idIter != idIterEnd; ++idIter) {
+    //outFile << *idIter << "\t" << *minIter << "\t" << *maxIter << "\t" << *medIter << "\t" << *meanIter << "\t" << *sdIter << endl;
 
     // Increment the exon id.
-    exonId++;
+    //exonId++;
 
     // Increment the iterators.
-    ++minIter;
-    ++maxIter;
-    ++meanIter;
-    ++medIter;
-    ++sdIter;
-  }
+    //++minIter;
+    //++maxIter;
+    //++meanIter;
+    //++medIter;
+    //++sdIter;
+  //}
 
   // Now include the gene level information.
-  outFile << "gene\tNA\t" << cov.geneMin << "\t" << cov.geneMax << "\t" << cov.geneMedian << "\t" << cov.geneMean << "\t" << cov.geneSd << endl;
+  //outFile << "gene\tNA\t" << cov.geneMin << "\t" << cov.geneMax << "\t" << cov.geneMedian << "\t" << cov.geneMean << "\t" << cov.geneSd << endl;
 }

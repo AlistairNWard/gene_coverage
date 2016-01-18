@@ -19,6 +19,7 @@ coverageData::coverageData(size_t size) {
 
   // Initialise arrays.
   featureLengths[size];
+  depthData.clear();
 }
 
 coverageData::~coverageData(void) {
@@ -45,6 +46,7 @@ void coverageData::sort(void) {
   int end       = 0;
   int sum       = 0;
   double sdTemp = 0.;
+  cout << "DATA: " << featureLengths.size() << " " << depthData.size() << endl;
   for (; iiter != iiterEnd; ++iiter) {
 
     // Define the end of the feature and the length.
@@ -59,6 +61,8 @@ void coverageData::sort(void) {
     // Find the min and max values
     featureMin.push_back(*depthIter);
     featureMax.push_back(*(depthIterEnd - 1));
+
+    cout << "    " << end << " " << length << " " << *depthIter << " " << *(depthIterEnd - 1) << " " << depthData.size() << endl;
 
     // Calculate the mean.
     sum = 0;
