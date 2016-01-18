@@ -302,7 +302,6 @@ int main(int argc, char * argv[])
       //PileupEngine pileup;
 
       // Parse the region and build up statistics.
-      cout << "REGION: " << region.LeftPosition << "-" << region.RightPosition << endl;
 
       // Define a new BamAlignment. Declaring here will ensure that if this region has no reads, but the previous
       // region did, the alignment object will be cleared.
