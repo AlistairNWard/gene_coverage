@@ -18,12 +18,10 @@ $(BAMTOOLS_ROOT)/lib/libbamtools.a:
 
 # Objects
 OBJECTS=dataProcessing.o \
-	mean.o \
-	pileup.o \
 	$(BAMTOOLS_ROOT)/lib/libbamtools.a
 
 # Executables
-coverage ../bin/coverage: coverage.o mean.o pileup.o dataProcessing.o $(OBJECTS)
+coverage ../bin/coverage: coverage.o dataProcessing.o $(OBJECTS)
 	@mkdir -p ../bin
 	$(CXX) $(CFLAGS) $(INCLUDE) coverage.o $(OBJECTS) -o ../bin/coverage $(LIBS)
 
@@ -33,12 +31,6 @@ dataProcessing.o: dataProcessing.cpp
 
 coverage.o: coverage.cpp $(BAMTOOLS_ROOT)/lib/libbamtools.a
 	$(CXX) $(CFLAGS) $(INCLUDE) -c coverage.cpp
-
-pileup.o: pileup.cpp $(BAMTOOLS_ROOT)/lib/libbamtools.a
-	$(CXX) $(CFLAGS) $(INCLUDE) -c pileup.cpp
-
-mean.o: mean.cpp
-	$(CXX) $(CFLAGS) $(INCLUDE) -c mean.cpp
 
 clean:
 	-@rm *.o

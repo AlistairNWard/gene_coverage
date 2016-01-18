@@ -312,9 +312,8 @@ int main(int argc, char * argv[])
       reader.GetNextAlignment(al);
 
       // If there are no alignments.
-      if (al.Position == -1) {
-        cout << "  NO ALIGNMENTS -> NO COVERAGE" << endl;
-      } else {
+      if (al.Position == -1) { cov.noCoverage(); }
+      else {
 
         // Initialise variables.
         vector<int> coverage(region.RightPosition - al.Position);
@@ -326,55 +325,53 @@ int main(int argc, char * argv[])
         // Loop over the remaining reads spanning the region.
         while ( reader.GetNextAlignment(al) ) { processCigar(al, region, coverageStart, coverage); }
 
-        //
+        // Process the coverage data for the feature.
         int start = region.LeftPosition - coverageStart;
-        vector<int>::iterator covIter = coverage.begin() + start;
-        vector<int>::iterator covIterEnd = coverage.end();
+        cov.processFeature(coverage, start);
       }
     }
   }
 
-  // Sort the coverages in each feature (for median calculation) and generate a sorted list of all depths (for
-  // the gene level calculation).
-  //cov.sort();
+  // Calculcate gene level data.
+  cov.processGene();
 
   // Iterators for features.
-  //vector<string>::iterator idIter    = cov.ids.begin();
-  //vector<string>::iterator idIterEnd = cov.ids.end();
+  vector<string>::iterator idIter    = cov.ids.begin();
+  vector<string>::iterator idIterEnd = cov.ids.end();
 
-  //vector<int>::iterator minIter    = cov.featureMin.begin();
-  //vector<int>::iterator minIterEnd = cov.featureMin.end();
+  vector<int>::iterator minIter    = cov.featureMin.begin();
+  vector<int>::iterator minIterEnd = cov.featureMin.end();
 
-  //vector<int>::iterator maxIter    = cov.featureMax.begin();
-  //vector<int>::iterator maxIterEnd = cov.featureMax.end();
+  vector<int>::iterator maxIter    = cov.featureMax.begin();
+  vector<int>::iterator maxIterEnd = cov.featureMax.end();
 
-  //vector<double>::iterator meanIter    = cov.featureMean.begin();
-  //vector<double>::iterator meanIterEnd = cov.featureMean.end();
+  vector<double>::iterator meanIter    = cov.featureMean.begin();
+  vector<double>::iterator meanIterEnd = cov.featureMean.end();
 
-  //vector<double>::iterator medIter    = cov.featureMedian.begin();
-  //vector<double>::iterator medIterEnd = cov.featureMedian.end();
+  vector<double>::iterator medIter    = cov.featureMedian.begin();
+  vector<double>::iterator medIterEnd = cov.featureMedian.end();
 
-  //vector<double>::iterator sdIter    = cov.featureSd.begin();
-  //vector<double>::iterator sdIterEnd = cov.featureSd.end();
+  vector<double>::iterator sdIter    = cov.featureSd.begin();
+  vector<double>::iterator sdIterEnd = cov.featureSd.end();
 
   // Include a header line.
-  //outFile << "#id\tregion\tmin\tmax\tmedian\tmean\tsd" << endl;
+  outFile << "#id\tregion\tmin\tmax\tmedian\tmean\tsd" << endl;
 
   // Iterate over the feature minimum values and increment all other iterators as we go.
-  //for (; idIter != idIterEnd; ++idIter) {
-    //outFile << *idIter << "\t" << *minIter << "\t" << *maxIter << "\t" << *medIter << "\t" << *meanIter << "\t" << *sdIter << endl;
+  for (; idIter != idIterEnd; ++idIter) {
+    outFile << *idIter << "\t" << *minIter << "\t" << *maxIter << "\t" << *medIter << "\t" << *meanIter << "\t" << *sdIter << endl;
 
     // Increment the exon id.
-    //exonId++;
+    exonId++;
 
     // Increment the iterators.
-    //++minIter;
-    //++maxIter;
-    //++meanIter;
-    //++medIter;
-    //++sdIter;
-  //}
+    ++minIter;
+    ++maxIter;
+    ++meanIter;
+    ++medIter;
+    ++sdIter;
+  }
 
   // Now include the gene level information.
-  //outFile << "gene\tNA\t" << cov.geneMin << "\t" << cov.geneMax << "\t" << cov.geneMedian << "\t" << cov.geneMean << "\t" << cov.geneSd << endl;
+  outFile << "gene\tNA\t" << cov.geneMin << "\t" << cov.geneMax << "\t" << cov.geneMedian << "\t" << cov.geneMean << "\t" << cov.geneSd << endl;
 }
