@@ -298,11 +298,6 @@ int main(int argc, char * argv[])
       cov.ids.push_back(oss.str());
       exonId++;
 
-      // Set up the pileup engine.
-      //PileupEngine pileup;
-
-      // Parse the region and build up statistics.
-
       // Define a new BamAlignment. Declaring here will ensure that if this region has no reads, but the previous
       // region did, the alignment object will be cleared.
       BamAlignment al;
@@ -315,8 +310,10 @@ int main(int argc, char * argv[])
       else {
 
         // Initialise variables.
-        vector<int> coverage(region.RightPosition - al.Position);
-        int coverageStart = al.Position;
+        int coverageStart;
+        if (al.Position < region.LeftPosition) {coverageStart = al.Position;}
+        else {coverageStart = region.LeftPosition;}
+        vector<int> coverage(region.RightPosition - coverageStart);
 
         // Process the first read.
         processCigar(al, region, coverageStart, coverage);

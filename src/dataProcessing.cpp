@@ -19,7 +19,6 @@ coverageData::coverageData(size_t size) {
 
   // Initialise arrays.
   featureLengths[size];
-  //depthData.clear();
 }
 
 coverageData::~coverageData(void) {
