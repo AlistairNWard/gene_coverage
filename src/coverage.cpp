@@ -344,18 +344,24 @@ int main(int argc, char * argv[])
   vector<double>::iterator meanIter    = cov.featureMean.begin();
   vector<double>::iterator meanIterEnd = cov.featureMean.end();
 
+  vector<double>::iterator q1Iter    = cov.featureQ1.begin();
+  vector<double>::iterator q1IterEnd = cov.featureQ1.end();
+
   vector<double>::iterator medIter    = cov.featureMedian.begin();
   vector<double>::iterator medIterEnd = cov.featureMedian.end();
+
+  vector<double>::iterator q3Iter    = cov.featureQ3.begin();
+  vector<double>::iterator q3IterEnd = cov.featureQ3.end();
 
   vector<double>::iterator sdIter    = cov.featureSd.begin();
   vector<double>::iterator sdIterEnd = cov.featureSd.end();
 
   // Include a header line.
-  outFile << "#id\tregion\tmin\tmax\tmedian\tmean\tsd" << endl;
+  outFile << "#id\tregion\tmin\tmax\tq1\tmedian\tq3\tmean\tsd" << endl;
 
   // Iterate over the feature minimum values and increment all other iterators as we go.
   for (; idIter != idIterEnd; ++idIter) {
-    outFile << *idIter << "\t" << *minIter << "\t" << *maxIter << "\t" << *medIter << "\t" << *meanIter << "\t" << *sdIter << endl;
+    outFile << *idIter << "\t" << *minIter << "\t" << *maxIter << "\t" << *q1Iter << "\t" << *medIter << "\t" << *q3Iter << "\t" << *meanIter << "\t" << *sdIter << endl;
 
     // Increment the exon id.
     exonId++;
@@ -363,8 +369,10 @@ int main(int argc, char * argv[])
     // Increment the iterators.
     ++minIter;
     ++maxIter;
-    ++meanIter;
+    ++q1Iter;
     ++medIter;
+    ++q3Iter;
+    ++meanIter;
     ++sdIter;
   }
 

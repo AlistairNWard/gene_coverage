@@ -25,13 +25,14 @@ class coverageData {
     std::vector<string> ids;
 
     // Hold the data for generating the data.
-    //std::vector<int> depthData;
     std::vector<int> featureLengths;
-    //std::vector<int> geneDepth;
   
     // Set of variables that are reset for each new region.
     std::vector<double> featureMean;
     std::vector<double> featureMedian;
+    std::vector<double> featureQ1;
+    std::vector<double> featureQ3;
+    std::vector<double> featureIqr;
     std::vector<double> featureSd;
     std::vector<int> featureMin;
     std::vector<int> featureMax;
@@ -40,6 +41,9 @@ class coverageData {
     vector<int> geneCoverage;
     double geneMean;
     double geneMedian;
+    double geneQ1;
+    double geneQ3;
+    double geneIqr;
     double geneSd;
     int geneMin;
     int geneMax;
@@ -53,9 +57,6 @@ class coverageData {
     void noCoverage();
     void processFeature(vector<int>&, int);
     void processGene();
-    //void update(int);
-    //void sort();
-    //float unsortedMedian();
 };
 
 #endif // DATA_PROCESSING_H
