@@ -377,5 +377,5 @@ int main(int argc, char * argv[])
   }
 
   // Now include the gene level information.
-  outFile << "gene\tNA\t" << cov.geneMin << "\t" << cov.geneMax << "\t" << cov.geneMedian << "\t" << cov.geneMean << "\t" << cov.geneSd << endl;
+  outFile << "gene\tNA\t" << cov.geneMin << "\t" << cov.geneMax << "\t" << cov.geneQ1 << "\t" << cov.geneMedian << "\t" << cov.geneQ3 << "\t" << cov.geneMean << "\t" << cov.geneSd << endl;
 }
