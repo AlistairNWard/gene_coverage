@@ -9,15 +9,32 @@ using namespace std;
 using namespace BamTools;
 
 // Parse a file and add all lines to the list of regions.
-vector<string> getRegions(string file) {
+void getRegions(string file, vector<string>& geneNames, vector< vector <string> >& regionList) {
   vector<string> list;
   string line;
-  ifstream infile(file.c_str());;
+  int i = -1;
+  ifstream infile(file.c_str());
 
   // Open the file reading.
-  while (getline(infile, line)) {list.push_back(line);}
+  while (getline(infile, line)) {
 
-  return list;
+    // Check if the line is a gene name or a region. All gene names must
+    // begin with '_'.
+   
+    if (line[0] == '_') {
+      geneNames.push_back(line.substr(1));
+      if (i != -1) {
+        regionList.push_back(list);
+        list.clear();
+      }
+      i++;
+    } else {
+      list.push_back(line);
+    }
+  }
+
+  // Add the final list to regionList.
+  regionList.push_back(list);
 }
 
 // Check that the region string is valid.
@@ -27,6 +44,9 @@ bool ParseRegionString(const string& regionString, const BamMultiReader& reader,
   if ( regionString.empty() ) {
     return false;
   }
+
+  // Store the name of the gene.
+  string geneName = "";
   
   // Look for a colon.
   size_t foundFirstColon = regionString.find(':');
@@ -229,153 +249,165 @@ int main(int argc, char * argv[])
   }
 
   // Read the file containing regions and add all regions to the list.
-  vector<string> regionList = getRegions(regionsFile);
+  vector< vector <string> > regionLists;
+  vector<string> geneNames;
+  getRegions(regionsFile, geneNames, regionLists);
 
-  // Define a structure for holding mean information.
-  coverageData cov(regionList.size());
+  // Loop over all genes and associated sets of regions.
+  vector<string>::iterator geneIter    = geneNames.begin();
+  vector<string>::iterator geneIterEnd = geneNames.end();
+  vector< vector <string> >::iterator regionIter    = regionLists.begin();
+  vector< vector <string> >::iterator regionIterEnd = regionLists.end();
 
-  // Open the multireader
-  BamMultiReader reader;
-  if ( !reader.Open(inputFiles) ) {
-    cerr << "bamtools count ERROR: could not open input BAM file(s)... Aborting." << endl;
-    exit(1);
-  }
+  for (; geneIter != geneIterEnd; geneIter++) {
 
-  // Define a region and alignment.
-  BamRegion region;
+    // Define a structure for holding mean information.
+    coverageData cov((*regionIter).size());
 
-  // Retrieve references.
-  BamTools::RefVector references = reader.GetReferenceData();
-
-  // Open output file (or stdout) for writing.
-  ofstream outputFile;
-  bool outputRequested = false;
-  if (output != "") {
-    outputRequested = true;
-    outputFile.open(output.c_str(), std::ios::out);
-  }
-  ostream & outFile = ( outputRequested ? outputFile : cout);
-
-  // Create a vector to store the info for each transcript.
-  vector<double> means;
-  vector<double> sds;
-
-  // Variables for defining a feature id.
-  int exonId = 1;
-
-  // Loop over all regions.
-  vector<string>::iterator iter    = regionList.begin();
-  vector<string>::iterator iterEnd = regionList.end();
-  for (; iter != iterEnd; ++iter) {
-
-    // Check that the region is valid and locate indexes.
-    if ( !ParseRegionString(*iter, reader, region) ) {
-      cerr << "ERROR: Invalid region string: " << *iter << endl;
+    // Open the multireader
+    BamMultiReader reader;
+    if ( !reader.Open(inputFiles) ) {
+      cerr << "bamtools count ERROR: could not open input BAM file(s)... Aborting." << endl;
       exit(1);
     }
+  
+    // Define a region and alignment.
+    BamRegion region;
+  
+    // Retrieve references.
+    BamTools::RefVector references = reader.GetReferenceData();
+  
+    // Open output file (or stdout) for writing.
+    ofstream outputFile;
+    bool outputRequested = false;
+    if (output != "") {
+      outputRequested = true;
+      outputFile.open(output.c_str(), std::ios::out);
+    }
+    ostream & outFile = ( outputRequested ? outputFile : cout);
+  
+    // Create a vector to store the info for each transcript.
+    vector<double> means;
+    vector<double> sds;
+  
+    // Variables for defining a feature id.
+    int exonId = 1;
+  
+    // Loop over all regions.
+    vector<string>::iterator iter    = (*regionIter).begin();
+    vector<string>::iterator iterEnd = (*regionIter).end();
+    for (; iter != iterEnd; ++iter) {
 
-    // Attempt to find index files.
-    reader.LocateIndexes();
-
-    // If index data available for all BAM files, we can use SetRegion.
-    if ( reader.HasIndexes() ) {
-
-      // Attempt to set region on reader.
-      if ( !reader.SetRegion(region.LeftRefID, region.LeftPosition, region.RightRefID, region.RightPosition) ) {
-        cerr << "bamtools count ERROR: set region failed. Check that REGION describes a valid range" << endl;
-        reader.Close();
+      // Check that the region is valid and locate indexes.
+      if ( !ParseRegionString(*iter, reader, region) ) {
+        cerr << "ERROR: Invalid region string: " << *iter << endl;
         exit(1);
       }
 
-      // Determine the length of the region and use this to define the start of each feature in the array of
-      // coverage data.
-      unsigned int length = region.RightPosition - region.LeftPosition + 1;
-      cov.featureLengths.push_back(length);
-
-      // Create an id with the region included.
-      ostringstream oss;
-      oss << exonId << "\t" << *iter;
-      cov.ids.push_back(oss.str());
-      exonId++;
-
-      // Define a new BamAlignment. Declaring here will ensure that if this region has no reads, but the previous
-      // region did, the alignment object will be cleared.
-      BamAlignment al;
-
-      // Get the first alignment to set the start coordinate of the first base in the first read.
-      reader.GetNextAlignment(al);
-
-      // If there are no alignments.
-      if (al.Position == -1) { cov.noCoverage(); }
-      else {
-
-        // Initialise variables.
-        int coverageStart;
-        if (al.Position < region.LeftPosition) {coverageStart = al.Position;}
-        else {coverageStart = region.LeftPosition;}
-        vector<int> coverage(region.RightPosition - coverageStart);
-
-        // Process the first read.
-        processCigar(al, region, coverageStart, coverage);
-
-        // Loop over the remaining reads spanning the region.
-        while ( reader.GetNextAlignment(al) ) { processCigar(al, region, coverageStart, coverage); }
-
-        // Process the coverage data for the feature.
-        int start = region.LeftPosition - coverageStart;
-        cov.processFeature(coverage, start);
+      // Attempt to find index files.
+      reader.LocateIndexes();
+  
+      // If index data available for all BAM files, we can use SetRegion.
+      if ( reader.HasIndexes() ) {
+  
+        // Attempt to set region on reader.
+        if ( !reader.SetRegion(region.LeftRefID, region.LeftPosition, region.RightRefID, region.RightPosition) ) {
+          cerr << "bamtools count ERROR: set region failed. Check that REGION describes a valid range" << endl;
+          reader.Close();
+          exit(1);
+        }
+  
+        // Determine the length of the region and use this to define the start of each feature in the array of
+        // coverage data.
+        unsigned int length = region.RightPosition - region.LeftPosition + 1;
+        cov.featureLengths.push_back(length);
+  
+        // Create an id with the region included.
+        ostringstream oss;
+        oss << exonId << "\t" << *iter;
+        cov.ids.push_back(oss.str());
+        exonId++;
+  
+        // Define a new BamAlignment. Declaring here will ensure that if this region has no reads, but the previous
+        // region did, the alignment object will be cleared.
+        BamAlignment al;
+  
+        // Get the first alignment to set the start coordinate of the first base in the first read.
+        reader.GetNextAlignment(al);
+  
+        // If there are no alignments.
+        if (al.Position == -1) { cov.noCoverage(); }
+        else {
+  
+          // Initialise variables.
+          int coverageStart;
+          if (al.Position < region.LeftPosition) {coverageStart = al.Position;}
+          else {coverageStart = region.LeftPosition;}
+          vector<int> coverage(region.RightPosition - coverageStart);
+  
+          // Process the first read.
+          processCigar(al, region, coverageStart, coverage);
+  
+          // Loop over the remaining reads spanning the region.
+          while ( reader.GetNextAlignment(al) ) { processCigar(al, region, coverageStart, coverage); }
+  
+          // Process the coverage data for the feature.
+          int start = region.LeftPosition - coverageStart;
+          cov.processFeature(coverage, start);
+        }
       }
     }
+
+    // Calculcate gene level data.
+    cov.processGene();
+  
+    // Iterators for features.
+    vector<string>::iterator idIter    = cov.ids.begin();
+    vector<string>::iterator idIterEnd = cov.ids.end();
+  
+    vector<int>::iterator minIter    = cov.featureMin.begin();
+    vector<int>::iterator minIterEnd = cov.featureMin.end();
+  
+    vector<int>::iterator maxIter    = cov.featureMax.begin();
+    vector<int>::iterator maxIterEnd = cov.featureMax.end();
+  
+    vector<double>::iterator meanIter    = cov.featureMean.begin();
+    vector<double>::iterator meanIterEnd = cov.featureMean.end();
+  
+    vector<double>::iterator q1Iter    = cov.featureQ1.begin();
+    vector<double>::iterator q1IterEnd = cov.featureQ1.end();
+  
+    vector<double>::iterator medIter    = cov.featureMedian.begin();
+    vector<double>::iterator medIterEnd = cov.featureMedian.end();
+  
+    vector<double>::iterator q3Iter    = cov.featureQ3.begin();
+    vector<double>::iterator q3IterEnd = cov.featureQ3.end();
+  
+    vector<double>::iterator sdIter    = cov.featureSd.begin();
+    vector<double>::iterator sdIterEnd = cov.featureSd.end();
+  
+    // Include a header line.
+    outFile << "#id\tregion\tmin\tmax\tq1\tmedian\tq3\tmean\tsd" << endl;
+  
+    // Iterate over the feature minimum values and increment all other iterators as we go.
+    for (; idIter != idIterEnd; ++idIter) {
+      outFile << *idIter << "\t" << *minIter << "\t" << *maxIter << "\t" << *q1Iter << "\t" << *medIter << "\t" << *q3Iter << "\t" << *meanIter << "\t" << *sdIter << endl;
+  
+      // Increment the exon id.
+      exonId++;
+  
+      // Increment the iterators.
+      ++minIter;
+      ++maxIter;
+      ++q1Iter;
+      ++medIter;
+      ++q3Iter;
+      ++meanIter;
+      ++sdIter;
+    }
+  
+    // Now include the gene level information.
+    outFile << *geneIter << "\tNA\t" << cov.geneMin << "\t" << cov.geneMax << "\t" << cov.geneQ1 << "\t" << cov.geneMedian << "\t" << cov.geneQ3 << "\t" << cov.geneMean << "\t" << cov.geneSd << endl;
+    regionIter++;
   }
-
-  // Calculcate gene level data.
-  cov.processGene();
-
-  // Iterators for features.
-  vector<string>::iterator idIter    = cov.ids.begin();
-  vector<string>::iterator idIterEnd = cov.ids.end();
-
-  vector<int>::iterator minIter    = cov.featureMin.begin();
-  vector<int>::iterator minIterEnd = cov.featureMin.end();
-
-  vector<int>::iterator maxIter    = cov.featureMax.begin();
-  vector<int>::iterator maxIterEnd = cov.featureMax.end();
-
-  vector<double>::iterator meanIter    = cov.featureMean.begin();
-  vector<double>::iterator meanIterEnd = cov.featureMean.end();
-
-  vector<double>::iterator q1Iter    = cov.featureQ1.begin();
-  vector<double>::iterator q1IterEnd = cov.featureQ1.end();
-
-  vector<double>::iterator medIter    = cov.featureMedian.begin();
-  vector<double>::iterator medIterEnd = cov.featureMedian.end();
-
-  vector<double>::iterator q3Iter    = cov.featureQ3.begin();
-  vector<double>::iterator q3IterEnd = cov.featureQ3.end();
-
-  vector<double>::iterator sdIter    = cov.featureSd.begin();
-  vector<double>::iterator sdIterEnd = cov.featureSd.end();
-
-  // Include a header line.
-  outFile << "#id\tregion\tmin\tmax\tq1\tmedian\tq3\tmean\tsd" << endl;
-
-  // Iterate over the feature minimum values and increment all other iterators as we go.
-  for (; idIter != idIterEnd; ++idIter) {
-    outFile << *idIter << "\t" << *minIter << "\t" << *maxIter << "\t" << *q1Iter << "\t" << *medIter << "\t" << *q3Iter << "\t" << *meanIter << "\t" << *sdIter << endl;
-
-    // Increment the exon id.
-    exonId++;
-
-    // Increment the iterators.
-    ++minIter;
-    ++maxIter;
-    ++q1Iter;
-    ++medIter;
-    ++q3Iter;
-    ++meanIter;
-    ++sdIter;
-  }
-
-  // Now include the gene level information.
-  outFile << "gene\tNA\t" << cov.geneMin << "\t" << cov.geneMax << "\t" << cov.geneQ1 << "\t" << cov.geneMedian << "\t" << cov.geneQ3 << "\t" << cov.geneMean << "\t" << cov.geneSd << endl;
 }

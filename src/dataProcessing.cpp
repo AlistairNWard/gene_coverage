@@ -39,6 +39,23 @@ void coverageData::noCoverage() {
 // Process a single feature.
 void coverageData::processFeature(vector<int>& coverage, int start) {
 
+  // TEST DATA
+//  coverage.clear();
+//  start = 0;
+//  coverage.push_back(6);
+//  coverage.push_back(7);
+//  coverage.push_back(15);
+//  coverage.push_back(36);
+//  coverage.push_back(39);
+//  coverage.push_back(40);
+//  coverage.push_back(41);
+//  coverage.push_back(42);
+//  coverage.push_back(43);
+//  coverage.push_back(47);
+//  coverage.push_back(49);
+//  coverage.push_back(51);
+//  coverage.push_back(53);
+
   // Initialise variables.
   int length  = coverage.size() - start;
   int sum     = 0;
@@ -50,7 +67,7 @@ void coverageData::processFeature(vector<int>& coverage, int start) {
   vector<int>::iterator iterEnd = coverage.end();
   for (; iter != iterEnd; ++iter) {
 
-    // Keep a sum of the coverage values.
+    // keep a sum of the coverage values.
     sum += *iter;
 
     // Add the value to the newCoverage vector. This will create the vector with the correct
@@ -58,23 +75,6 @@ void coverageData::processFeature(vector<int>& coverage, int start) {
     newCoverage.push_back(*iter);
     geneCoverage.push_back(*iter);
   }
-
-  // TEST DATA
-//  newCoverage.clear();
-//  newCoverage.push_back(6);
-//  newCoverage.push_back(7);
-//  newCoverage.push_back(15);
-//  newCoverage.push_back(36);
-//  newCoverage.push_back(39);
-//  newCoverage.push_back(40);
-//  newCoverage.push_back(41);
-//  newCoverage.push_back(42);
-//  newCoverage.push_back(43);
-//  newCoverage.push_back(47);
-//  newCoverage.push_back(49);
-//  newCoverage.push_back(51);
-//  newCoverage.push_back(53);
-//  length = newCoverage.size();
 
   // Calculate the mean.
   double mean = sum / double(length);
