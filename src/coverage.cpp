@@ -35,6 +35,20 @@ void getRegions(string file, vector<string>& geneNames, vector< vector <string> 
 
   // Add the final list to regionList.
   regionList.push_back(list);
+
+  // If the number of gene names is not equal to the number of regions lists, fail.
+  if (regionList.size() != geneNames.size()) {
+    cout << "Error with input regions." << endl;
+    cout << "Input regions must be a file with the following format:" << endl;
+    cout << "    _GENE NAME ('_' must prepend gene name)" << endl;
+    cout << "    chr:start-end (first exon)" << endl;
+    cout << "    chr:start-end (second exon)" << endl;
+    cout << "    etc." << endl;
+    cout << endl;
+    cout << "As many genes as desired can be included, but each new set of regions, must" << endl;
+    cout << "start with the _gene name." << endl;
+    exit(1);
+  }
 }
 
 // Check that the region string is valid.
