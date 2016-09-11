@@ -273,32 +273,35 @@ int main(int argc, char * argv[])
   vector< vector <string> >::iterator regionIter    = regionLists.begin();
   vector< vector <string> >::iterator regionIterEnd = regionLists.end();
 
+  // Open output file (or stdout) for writing.
+  ofstream outputFile;
+  bool outputRequested = false;
+  if (output != "") {
+    outputRequested = true;
+    outputFile.open(output.c_str(), std::ios::out);
+  }
+  ostream & outFile = ( outputRequested ? outputFile : cout);
+
+  // Write out header information once.
+  outFile << "#id\tregion\tmin\tmax\tq1\tmedian\tq3\tmean\tsd" << endl;
+
+  // Open the multireader
+  BamMultiReader reader;
+  if ( !reader.Open(inputFiles) ) {
+    cerr << "bamtools count ERROR: could not open input BAM file(s)... Aborting." << endl;
+    exit(1);
+  }
+
+  // Define a region and alignment.
+  BamRegion region;
+
+  // Retrieve references.
+  BamTools::RefVector references = reader.GetReferenceData();
+
   for (; geneIter != geneIterEnd; geneIter++) {
 
     // Define a structure for holding mean information.
     coverageData cov((*regionIter).size());
-
-    // Open the multireader
-    BamMultiReader reader;
-    if ( !reader.Open(inputFiles) ) {
-      cerr << "bamtools count ERROR: could not open input BAM file(s)... Aborting." << endl;
-      exit(1);
-    }
-  
-    // Define a region and alignment.
-    BamRegion region;
-  
-    // Retrieve references.
-    BamTools::RefVector references = reader.GetReferenceData();
-  
-    // Open output file (or stdout) for writing.
-    ofstream outputFile;
-    bool outputRequested = false;
-    if (output != "") {
-      outputRequested = true;
-      outputFile.open(output.c_str(), std::ios::out);
-    }
-    ostream & outFile = ( outputRequested ? outputFile : cout);
   
     // Create a vector to store the info for each transcript.
     vector<double> means;
@@ -399,9 +402,6 @@ int main(int argc, char * argv[])
   
     vector<double>::iterator sdIter    = cov.featureSd.begin();
     vector<double>::iterator sdIterEnd = cov.featureSd.end();
-  
-    // Include a header line.
-    outFile << "#id\tregion\tmin\tmax\tq1\tmedian\tq3\tmean\tsd" << endl;
   
     // Iterate over the feature minimum values and increment all other iterators as we go.
     for (; idIter != idIterEnd; ++idIter) {
