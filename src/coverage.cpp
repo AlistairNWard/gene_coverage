@@ -21,7 +21,7 @@ void getRegions(string file, vector<string>& geneNames, vector< vector <string> 
     // Check if the line is a gene name or a region. All gene names must
     // begin with '_'.
    
-    if (line[0] == '_') {
+    if (line[0] == '#') {
       geneNames.push_back(line.substr(1));
       if (i != -1) {
         regionList.push_back(list);
