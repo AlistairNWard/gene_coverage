@@ -40,7 +40,7 @@ void getRegions(string file, vector<string>& geneNames, vector< vector <string> 
   if (regionList.size() != geneNames.size()) {
     cout << "Error with input regions." << endl;
     cout << "Input regions must be a file with the following format:" << endl;
-    cout << "    _GENE NAME ('_' must prepend gene name)" << endl;
+    cout << "    #GENE NAME ('#' must prepend gene name)" << endl;
     cout << "    chr:start-end (first exon)" << endl;
     cout << "    chr:start-end (second exon)" << endl;
     cout << "    etc." << endl;

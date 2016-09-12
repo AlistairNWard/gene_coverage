@@ -63,7 +63,7 @@ void coverageData::processFeature(vector<int>& coverage, int start) {
   vector<int> newCoverage;
 
   // Loop over the coverage data for the feature.
-  vector<int>::iterator iter    = coverage.begin() + start;
+  vector<int>::iterator iter    = coverage.begin() + start - 1;
   vector<int>::iterator iterEnd = coverage.end();
   for (; iter != iterEnd; ++iter) {
 
