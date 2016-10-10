@@ -39,23 +39,6 @@ void coverageData::noCoverage() {
 // Process a single feature.
 void coverageData::processFeature(vector<int>& coverage, int start) {
 
-  // TEST DATA
-//  coverage.clear();
-//  start = 0;
-//  coverage.push_back(6);
-//  coverage.push_back(7);
-//  coverage.push_back(15);
-//  coverage.push_back(36);
-//  coverage.push_back(39);
-//  coverage.push_back(40);
-//  coverage.push_back(41);
-//  coverage.push_back(42);
-//  coverage.push_back(43);
-//  coverage.push_back(47);
-//  coverage.push_back(49);
-//  coverage.push_back(51);
-//  coverage.push_back(53);
-
   // Initialise variables.
   int length  = coverage.size() - start;
   int sum     = 0;
