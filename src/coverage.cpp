@@ -342,6 +342,7 @@ int main(int argc, char * argv[])
         // Create an id with the region included.
         ostringstream oss;
         oss << exonId << "\t" << *iter;
+        cov.ids.push_back(oss.str());
         exonId++;
   
         // Define a new BamAlignment. Declaring here will ensure that if this region has no reads, but the previous
@@ -372,7 +373,6 @@ int main(int argc, char * argv[])
 
           // Only process regions with more than a single base.
           if (coverage.size() - start > 0) {
-            cov.ids.push_back(oss.str());
             cov.processFeature(coverage, start);
           }
         }
