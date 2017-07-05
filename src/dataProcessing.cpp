@@ -127,6 +127,18 @@ void coverageData::processGene() {
   int length = geneCoverage.size();
   int sum    = 0;
   double sd  = 0.;
+  
+  // If there were no reads in the entire gene, return.
+  if (length == 0) {
+    geneMean = 0;
+    geneSd = 0;
+    geneMedian = 0;
+    geneMin = 0;
+    geneMax = 0;
+    geneQ1 = 0;
+    geneQ3 = 0;
+    return;
+  }
 
   // Sort the gene level coverage.
   std::sort(geneCoverage.begin(), geneCoverage.end());
